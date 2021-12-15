@@ -1,0 +1,26 @@
+- name: Copy the JDK installation package.
+  copy: src=jdk-8u231-linux-x64.tar.gz dest=/usr/local/src owner=root group=root mode=0644
+
+- name: Decompress the JDK installation package.
+  unarchive: src=/usr/local/src/jdk-8u231-linux-x64.tar.gz dest=/usr/local copy=no mode=0755
+
+- name: Java environment variables.
+  lineinfile:
+    path: /etc/profile
+    state: present
+    regex: "{{ item.position }}"
+    line: "{{ item.value}}"
+  with_items:
+    - { position: "JAVA_HOME=", value: "export JAVA_HOME=/usr/local/{{ jdk_versions }}" }
+    - { position: "JRE_HOME=", value: "export JRE_HOME=${JAVA_HOME}/jre" }
+    - { position: "PATH=${JAVA_HOME}", value: "export PATH=${JAVA_HOME}/bin:$PATH"}
+    - { position: "CLASSPATH=", value: 'export CLASSPATH=.:$JAVA_HOME/lib/tools.jar:$JAVA_HOME/lib/dt.jar:$JRE_HOME/lib:$CLASSPATH' }
+
+- name: Loading environment variables.
+  shell: source /etc/profile
+
+- name: Test whether the JDK is installed successfully.
+  shell: "source /etc/profile && java -version"
+  register: java_version
+
+- debug: msg={{ java_version }}
